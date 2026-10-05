@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto mt-6 gsap-fade space-y-6">
+    <div class="flex flex-col md:flex-row gap-6 mb-6">
+        
+        <!-- Left Column: Controls & Details -->
+        <div class="w-full md:w-1/3 space-y-6">
+            <div class="bg-glass backdrop-blur-2xl border border-glassBorder p-6 rounded-3xl shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Unit Terminal</h2>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-800 border border-slate-600" id="ambStatus">{{ current_user.ambulance.status }}</span>
+                </div>
+                
+                {% if incident %}
+                    <div class="bg-red-500/10 border border-red-500/30 p-5 rounded-2xl mb-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-2 h-full bg-red-500"></div>
+                        <h3 class="font-bold text-red-400 mb-2 uppercase tracking-wide text-sm flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Active Dispatch
+                        </h3>
+                        <p class="text-slate-200 capitalize">Severity: <span class="font-medium">{{ incident.severity }}</span></p>
+                        <p class="text-slate-200 mt-1">Contact: <span class="font-medium">{{ incident.reporter_contact }}</span></p>
+                        
+                        <div class="mt-4 pt-4 border-t border-red-500/20">
+                            <span class="text-xs text-slate-400 uppercase tracking-wider block mb-2">Update Phase</span>
+                            <div class="flex flex-col gap-3">
+                                {% if incident.status == 'assigned' or incident.status == 'en_route' %}
+                                    <button onclick="updateStatus('en_route')" class="w-full bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/50 text-yellow-400 px-4 py-3 rounded-xl transition">1. Mark En Route</button>
+                                    <button onclick="updateStatus('reached')" class="w-full bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 text-blue-400 px-4 py-3 rounded-xl transition">2. Arrived at Scene</button>
+                                {% elif incident.status == 'reached' or incident.status == 'hospital_redirect' %}
+                                    <button onclick="updateStatus('completed')" class="w-full bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl transition">3. Mission Complete</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="py-10 text-center border-2 border-dashed border-slate-700 rounded-2xl mb-6">
+                        <p class="text-slate-400">Unit available. Awaiting dispatch.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="bg-glass backdrop-blur-2xl border border-glassBorder p-6 rounded-3xl shadow-xl">
+                <h3 class="font-bold mb-1 text-slate-200">Telematics Link</h3>
+                <p id="locStatus" class="text-xs text-slate-400 mb-4">GPS disabled.</p>
+                <button id="startGpsBtn" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    Activate Location Stream
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Map -->
+        <div class="w-full md:w-2/3">
+            <div class="bg-glass backdrop-blur-2xl border border-glassBorder p-2 rounded-3xl shadow-xl h-[600px] relative overflow-hidden flex items-center justify-center">
+                {% if incident %}
+                    <div id="driverMap" class="w-full h-full rounded-2xl z-0"></div>
+                {% else %}
+                    <div class="text-center z-10 flex flex-col items-center">
+                        <div class="w-24 h-24 mb-6 relative">
+                            <div class="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping"></div>
+                            <div class="absolute inset-2 border-4 border-blue-500/50 rounded-full animate-pulse"></div>
+                            <div class="absolute inset-4 bg-blue-500/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-200 tracking-wider">STANDING BY</h3>
+                        <p class="text-slate-400 mt-2 max-w-xs">No active route. Keep the terminal open to receive immediate dispatch orders.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    async function updateStatus(status) {
+        await fetch('/api/driver/status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status})
+        });
+        window.location.reload();
+    }
+
+    {% if incident %}
+        const incLat = {{ incident.lat }};
+        const incLng = {{ incident.lng }};
+        let ambLat = {{ current_user.ambulance.current_lat or 13.0827 }};
+        let ambLng = {{ current_user.ambulance.current_lng or 80.2707 }};
+
+        const map = L.map('driverMap').setView([ambLat, ambLng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        const incIcon = L.icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize: [25, 41], iconAnchor: [12, 41]});
+        const ambIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/320/320150.png', iconSize: [30, 30], className: 'invert-0 amb-marker-anim'});
+
+        L.marker([incLat, incLng], {icon: incIcon}).addTo(map).bindPopup("Emergency Location").openPopup();
+        let ambMarker = L.marker([ambLat, ambLng], {icon: ambIcon}).addTo(map);
+        
+        let routeLayer = null;
+
+        async function drawDriverRoute(startLat, startLng, endLat, endLng) {
+            try {
+                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`);
+                const data = await response.json();
+                if (data.routes && data.routes.length > 0) {
+                    if (routeLayer) map.removeLayer(routeLayer);
+                    routeLayer = L.geoJSON(data.routes[0].geometry, {
+                        style: { color: '#fbbf24', weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round' }
+                    }).addTo(map);
+                    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                }
+            } catch(e) {}
+        }
+        
+        drawDriverRoute(ambLat, ambLng, incLat, incLng);
+    {% endif %}
+
+    document.getElementById('startGpsBtn').addEventListener('click', () => {
+        const locStatus = document.getElementById('locStatus');
+        const btn = document.getElementById('startGpsBtn');
+        
+        if (navigator.geolocation) {
+            locStatus.innerHTML = "<span class='text-green-400 font-medium'>● Live</span> Streaming GPS coordinates...";
+            btn.classList.add('bg-green-900/50', 'border-green-500/50');
+            btn.textContent = "Stream Active";
+            
+            // Simple speech synthesis alert
+            {% if incident and incident.status == 'assigned' %}
+            if (!localStorage.getItem('alertPlayed_{{ incident.id }}')) {
+                const synth = window.speechSynthesis;
+                const msg = new SpeechSynthesisUtterance("Emergency dispatch received. New route assigned to unit.");
+                synth.speak(msg);
+                localStorage.setItem('alertPlayed_{{ incident.id }}', 'true');
+            }
+            {% endif %}
+            
+            navigator.geolocation.watchPosition(async (pos) => {
+                await fetch('/api/driver/location', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude})
+                });
+                
+                {% if incident %}
+                    // Update driver marker and redraw route if they move significantly
+                    ambMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+                    drawDriverRoute(pos.coords.latitude, pos.coords.longitude, incLat, incLng);
+                {% endif %}
+                
+            }, (err) => {
+                locStatus.textContent = "GPS Error: " + err.message;
+            }, { enableHighAccuracy: true });
+        } else {
+            locStatus.textContent = "Geolocation not supported.";
+        }
+    });
+</script>
+
+<script>
+    // Monkey patch updateStatus to keep query params
+    const origUpdateStatus = updateStatus;
+    updateStatus = async function(status) {
+        await fetch('/api/driver/status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status})
+        });
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentDemo = urlParams.get('demo');
+        let nextDemo = currentDemo;
+        if(currentDemo === '6_start') nextDemo = '6_enroute';
+        else if(currentDemo === '6_enroute') nextDemo = '6_arrived';
+        else if(currentDemo === '6_arrived') nextDemo = '6_complete';
+        
+        if (currentDemo) {
+            window.location.href = window.location.pathname + '?demo=' + nextDemo;
+        } else {
+            window.location.reload();
+        }
+    };
+
+    const demoState = new URLSearchParams(window.location.search).get('demo');
+    if (demoState && demoState.startsWith('6')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 z-[999] bg-transparent cursor-wait';
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => {
+            if (demoState === '6_start') {
+                document.getElementById('startGpsBtn').click();
+                setTimeout(() => {
+                    const btn = document.querySelector('button[onclick="updateStatus(\'en_route\')"]');
+                    if (btn) btn.click();
+                }, 2000);
+            } 
+            else if (demoState === '6_enroute') {
+                setTimeout(() => {
+                    const btn = document.querySelector('button[onclick="updateStatus(\'reached\')"]');
+                    if (btn) btn.click();
+                }, 3000);
+            }
+            else if (demoState === '6_arrived') {
+                setTimeout(() => {
+                    const btn = document.querySelector('button[onclick="updateStatus(\'completed\')"]');
+                    if (btn) btn.click();
+                }, 2000);
+            }
+            else if (demoState === '6_complete') {
+                setTimeout(() => {
+                    window.location.href = '/'; // Back to home!
+                }, 4000);
+            }
+        }, 1000);
+    }
+</script>
+
+{% endblock %}

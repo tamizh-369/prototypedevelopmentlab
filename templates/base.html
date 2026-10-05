@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SOS Dispatch Command{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.03)',
+                        glassHover: 'rgba(255, 255, 255, 0.08)',
+                        glassBorder: 'rgba(255, 255, 255, 0.05)',
+                        brandBlue: '#3b82f6',
+                        brandPurple: '#8b5cf6'
+                    },
+                    animation: {
+                        'float-slow': 'float 20s ease-in-out infinite',
+                        'float-delayed': 'float 25s ease-in-out infinite 5s',
+                        'pulse-glow': 'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: '1', filter: 'drop-shadow(0 0 15px rgba(59,130,246,0.5))' },
+                            '50%': { opacity: '.7', filter: 'drop-shadow(0 0 5px rgba(59,130,246,0.2))' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { scroll-behavior: smooth; }
+        .leaflet-container { background: #0b1120; font-family: inherit; }
+        .leaflet-tile {
+            filter: grayscale(100%) invert(100%) contrast(120%) brightness(80%);
+        }
+        .amb-marker-anim {
+            transition: transform 3s linear !important;
+        }
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .btn-primary {
+            position: relative; overflow: hidden; z-index: 1;
+        }
+        .btn-primary::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; h: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.7s ease; z-index: -1;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen relative overflow-x-hidden font-sans selection:bg-brandBlue/30">
+    
+    <!-- Ambient Breathing Orbs -->
+    <div class="fixed inset-0 z-[-1] pointer-events-none overflow-hidden opacity-70">
+        <div class="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-brandBlue/20 rounded-full blur-[140px] animate-float-slow"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-brandPurple/20 rounded-full blur-[140px] animate-float-delayed"></div>
+    </div>
+
+    <!-- Elegant Nav -->
+    <nav class="glass-panel border-b-0 border-white/5 sticky top-0 z-50 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3 group nav-brand opacity-0">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brandBlue to-brandPurple flex items-center justify-center shadow-lg shadow-brandBlue/30 group-hover:scale-110 transition-transform duration-500">
+                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <span class="text-xl font-bold tracking-widest text-slate-100">SOS DISPATCH</span>
+            </a>
+            <div class="space-x-6 text-sm font-medium tracking-wide nav-links opacity-0">
+                {% if current_user.is_authenticated %}
+                    <a href="/logout" class="text-slate-200 hover:text-white transition-colors duration-300 hover:glow">Disconnect</a>
+                {% else %}
+                    <a href="/admin/login" class="text-slate-200 hover:text-white transition-colors duration-300 relative group">
+                        Command
+                        <span class="absolute -bottom-1 left-0 w-0 h-px bg-brandBlue transition-all duration-300 group-hover:w-full"></span>
+                    </a>
+                    <a href="/driver/login" class="text-slate-200 hover:text-white transition-colors duration-300 relative group">
+                        Unit
+                        <span class="absolute -bottom-1 left-0 w-0 h-px bg-brandPurple transition-all duration-300 group-hover:w-full"></span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 md:px-8 py-8">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-8 space-y-3 flash-messages">
+                {% for message in messages %}
+                    <div class="glass-panel border-red-500/30 text-red-200 px-6 py-4 rounded-xl flex items-center gap-3">
+                        <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div id="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script>
+        // Global Entry Animations
+        const tl = gsap.timeline();
+        tl.to(".nav-brand", { opacity: 1, x: 0, duration: 0.8, ease: "power3.out" }, 0.1)
+          .to(".nav-links", { opacity: 1, duration: 0.8, ease: "power3.out" }, 0.2);
+          
+        if(document.querySelector('.flash-messages')) {
+            gsap.from(".flash-messages > div", { y: -20, opacity: 0, duration: 0.5, stagger: 0.1, ease: "back.out(1.7)"});
+        }
+    </script>
+</body>
+</html>

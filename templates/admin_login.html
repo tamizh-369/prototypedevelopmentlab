@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-24">
+    <div class="glass-panel p-10 rounded-3xl relative overflow-hidden login-card opacity-0 scale-95">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-brandPurple/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+        
+        <h2 class="text-2xl font-bold mb-8 text-center tracking-wide text-white">Central Command</h2>
+        
+        <form method="POST" class="space-y-5 relative z-10">
+            <div>
+                <input type="text" id="username" name="username" placeholder="Admin ID" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3.5 text-slate-200 outline-none focus:ring-2 focus:ring-brandPurple focus:bg-slate-900/80 transition-all placeholder-slate-500" required>
+            </div>
+            <div>
+                <input type="password" id="password" name="password" placeholder="Passcode" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3.5 text-slate-200 outline-none focus:ring-2 focus:ring-brandPurple focus:bg-slate-900/80 transition-all placeholder-slate-500" required>
+            </div>
+            <button type="submit" class="btn-primary w-full bg-brandPurple hover:bg-purple-500 text-white p-4 rounded-xl font-bold shadow-[0_0_20px_-5px_rgba(139,92,246,0.6)] transition-all active:scale-[0.98]">Authorize Access</button>
+        </form>
+        
+        <div class="mt-8 text-center border-t border-slate-700/50 pt-5 relative z-10">
+            <button type="button" onclick="autoFill()" class="text-xs font-medium text-slate-500 hover:text-brandPurple transition-colors flex items-center justify-center gap-2 mx-auto">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Autofill Demo Credentials
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    gsap.to(".login-card", { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.2)" });
+    function autoFill() {
+        document.getElementById('username').value='admin';
+        document.getElementById('password').value='admin';
+        gsap.to(["#username", "#password"], { backgroundColor: "rgba(139, 92, 246, 0.1)", duration: 0.3, yoyo: true, repeat: 1 });
+    }
+</script>
+
+<script>
+    if (new URLSearchParams(window.location.search).get('demo') === '3') {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 z-[999] bg-transparent cursor-wait';
+        document.body.appendChild(overlay);
+        
+        document.querySelector('form').action = '?demo=4';
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        async function typeStr(id, str) {
+            const el = document.getElementById(id);
+            el.value = '';
+            for(let char of str) { el.value += char; await delay(80); }
+        }
+        (async () => {
+            await delay(1000);
+            await typeStr('username', 'admin');
+            await delay(200);
+            await typeStr('password', 'admin');
+            await delay(500);
+            document.querySelector('form button').click();
+        })();
+    }
+</script>
+
+{% endblock %}

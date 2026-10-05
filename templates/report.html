@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-lg mx-auto mt-8 md:mt-12">
+    <div class="glass-panel p-8 md:p-10 rounded-3xl relative overflow-hidden report-card opacity-0 scale-95">
+        
+        <!-- Animated Background Gradient inside card -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-brandBlue/20 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-red-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center gap-4 mb-8 form-elem opacity-0 translate-y-4">
+                <div class="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center border border-red-500/30">
+                    <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Signal Incident</h2>
+                    <p class="text-sm text-slate-400">Dispatch system ready.</p>
+                </div>
+            </div>
+            
+            <form id="reportForm" class="space-y-6">
+                <div class="form-elem opacity-0 translate-y-4">
+                    <label class="block text-slate-300 text-sm font-medium mb-2 tracking-wide">Emergency Severity</label>
+                    <div class="relative">
+                        <select id="severity" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3.5 text-slate-200 focus:ring-2 focus:ring-brandBlue focus:border-brandBlue outline-none transition-all appearance-none">
+                            <option value="general">General Medical</option>
+                            <option value="trauma">Trauma / Accident</option>
+                            <option value="icu">Critical / ICU</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-elem opacity-0 translate-y-4">
+                    <label class="block text-slate-300 text-sm font-medium mb-2 tracking-wide">Contact Number</label>
+                    <input type="text" id="contact" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3.5 text-slate-200 focus:ring-2 focus:ring-brandBlue outline-none transition-all placeholder-slate-600 focus:bg-slate-900/80" placeholder="e.g. 9876543210" required>
+                </div>
+                
+                <div class="form-elem opacity-0 translate-y-4">
+                    <label class="block text-slate-300 text-sm font-medium mb-2 tracking-wide flex justify-between">
+                        Location Coordinates
+                        <span id="locationStatus" class="text-xs text-brandBlue font-medium"></span>
+                    </label>
+                    <div class="relative mb-3">
+                        <input type="text" id="addressSearch" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:ring-2 focus:ring-brandBlue outline-none transition-all placeholder-slate-600 text-sm" placeholder="Search Address (e.g., Central Station, Chennai)">
+                        <button type="button" id="searchBtn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-brandBlue/20 text-brandBlue hover:bg-brandBlue/40 px-3 py-1.5 rounded-lg text-xs font-bold transition">Search</button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 mb-3">
+                        <input type="text" id="lat" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:ring-2 focus:ring-brandBlue outline-none transition-all placeholder-slate-600 text-sm" placeholder="Latitude">
+                        <input type="text" id="lng" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:ring-2 focus:ring-brandBlue outline-none transition-all placeholder-slate-600 text-sm" placeholder="Longitude">
+                    </div>
+                    <button type="button" id="getLocationBtn" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 text-slate-200 px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm group">
+                        <svg class="w-4 h-4 text-brandBlue group-hover:animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        Target GPS Coordinates (Auto)
+                    </button>
+                </div>
+                
+                <div class="form-elem opacity-0 translate-y-4 pt-4">
+                    <button type="submit" class="btn-primary w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-4 py-4 rounded-xl font-bold shadow-[0_0_20px_-5px_rgba(225,29,72,0.5)] transition-all active:scale-[0.98] text-lg uppercase tracking-wider flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Deploy Ambulance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Entry Animations
+    gsap.to(".report-card", { opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" });
+    gsap.to(".form-elem", { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power3.out", delay: 0.2 });
+
+    // Location Logic
+    const locBtn = document.getElementById('getLocationBtn');
+    locBtn.addEventListener('click', () => {
+        const status = document.getElementById('locationStatus');
+        status.textContent = "Acquiring signal...";
+        status.classList.add("animate-pulse");
+        
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lng').value = pos.coords.longitude;
+                status.classList.remove("animate-pulse");
+                status.textContent = "Signal locked.";
+                status.className = "text-xs text-green-400 font-medium";
+                gsap.to(["#lat", "#lng"], { borderColor: "#4ade80", duration: 0.3, yoyo: true, repeat: 1 });
+            },
+            (err) => {
+                status.classList.remove("animate-pulse");
+                status.textContent = "Error: " + err.message;
+                status.className = "text-xs text-red-400 font-medium";
+            }
+        );
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+        const q = document.getElementById('addressSearch').value;
+        const status = document.getElementById('locationStatus');
+        if (!q) return;
+        
+        status.textContent = "Geocoding address...";
+        status.className = "text-xs text-brandBlue font-medium animate-pulse";
+        
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                document.getElementById('lat').value = parseFloat(data[0].lat).toFixed(6);
+                document.getElementById('lng').value = parseFloat(data[0].lon).toFixed(6);
+                status.textContent = "Address locked.";
+                status.className = "text-xs text-green-400 font-medium";
+                gsap.to(["#lat", "#lng", "#addressSearch"], { borderColor: "#4ade80", duration: 0.3, yoyo: true, repeat: 1 });
+            } else {
+                status.textContent = "Address not found.";
+                status.className = "text-xs text-red-400 font-medium";
+            }
+        } catch (e) {
+            status.textContent = "Search failed.";
+            status.className = "text-xs text-red-400 font-medium";
+        }
+    });
+
+    document.getElementById('reportForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const lat = document.getElementById('lat').value;
+        const lng = document.getElementById('lng').value;
+        
+        if (!lat || !lng) {
+            gsap.to(["#lat", "#lng"], { x: [-5, 5, -5, 5, 0], duration: 0.4, borderColor: "#ef4444" });
+            return;
+        }
+
+        // Add a nice loading state to button
+        const btn = e.target.querySelector('button[type="submit"]');
+        const origContent = btn.innerHTML;
+        btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Initializing Protocol...`;
+        
+        try {
+            const res = await fetch('/api/signal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({lat, lng, severity: document.getElementById('severity').value, contact: document.getElementById('contact').value})
+            });
+            const data = await res.json();
+            
+            if (data.tracking_token) {
+                // Exit animation before redirect
+                const isDemoMode = new URLSearchParams(window.location.search).get('demo') === '1';
+                const appendDemo = isDemoMode ? '?demo=2' : '';
+                
+                gsap.to(".report-card", { scale: 0.95, opacity: 0, duration: 0.4, ease: "power2.in", onComplete: () => {
+                    window.location.href = `/track/${data.tracking_token}${appendDemo}`;
+                }});
+            } else {
+                btn.innerHTML = origContent;
+                alert("Error: " + (data.error || "Unknown"));
+            }
+        } catch(err) {
+            btn.innerHTML = origContent;
+        }
+    });
+</script>
+
+<script>
+    const isDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+    if (isDemo) {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 z-[999] bg-transparent cursor-wait';
+        document.body.appendChild(overlay);
+
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        async function typeStr(id, str) {
+            const el = document.getElementById(id);
+            el.value = '';
+            for(let char of str) { el.value += char; await delay(80); }
+        }
+
+        (async () => {
+            await delay(1500);
+            await typeStr('contact', '9876543210');
+            await delay(500);
+            await typeStr('addressSearch', 'Marina Beach, Chennai');
+            await delay(500);
+            document.getElementById('searchBtn').click();
+            await delay(2500);
+            document.querySelector('#reportForm button[type="submit"]').click();
+        })();
+    }
+</script>
+
+{% endblock %}
