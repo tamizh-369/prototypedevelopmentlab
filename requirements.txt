@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 psycopg[binary]>=3.1
 SQLAlchemy==2.0.29
 Werkzeug==3.0.1
+gunicorn
